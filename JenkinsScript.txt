@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define your Git repository URL
+        GIT_REPO = 'https://github.com/tommytomtom666/jenkinsTest.git'
+        // Define branch to fetch
+        GIT_BRANCH = 'BatMain'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Clone the Git repository
+                git branch: "${env.GIT_BRANCH}", url: "${env.GIT_REPO}"
+            }
+        }
+
+        stage('Run Script') {
+            steps {
+                // Ensure the script has executable permissions
+                sh 'chmod +x helloLinux.sh'
+                // Run the script
+                sh './helloLinux.sh'
+            }
+        }
+    }
+}
+
+
+--------------------
+
+/* Requires the Docker Pipeline plugin */
+pipeline {
+    agent any
+    tools {
+        dockerTool 'Docker'
+    }
+    stages {
+        stage('define docker image') {
+            steps {
+                script {
+                    def customImage = docker.build('my-python-image', 'python:3.12.4-alpine3.20')
+                    // Store the custom image in an environment variable to be used in the next stage
+                    env.CUSTOM_IMAGE = customImage.id
+                }
+            }
+        }
+        stage('test python') {
+            steps {
+                script {
+                        docker.image(env.CUSTOM_IMAGE).inside {
+                        sh 'python --version'
+                    }
+                }
+            }
+        }
+    }
+}
